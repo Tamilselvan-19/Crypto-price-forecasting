@@ -1,1 +1,13 @@
-News API: https://newsapi.org/register/success
+Flask
+yfinance
+pandas
+numpy
+ta
+scikit-learn
+xgboost
+tensorflow
+joblib
+newsapi-python
+textblob
+python-dotenv
+gunicorn
