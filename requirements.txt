@@ -1,1 +1,1 @@
-News API: https://newsapi.org/register/success
+
