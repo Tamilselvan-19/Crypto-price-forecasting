@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Flask
 yfinance
 pandas
@@ -11,3 +12,6 @@ newsapi-python
 textblob
 python-dotenv
 gunicorn
+=======
+
+>>>>>>> 344f55387b01d9b1e418d42208ab11c32e4e0e05
