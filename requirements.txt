@@ -1,17 +1,9 @@
-<<<<<<< HEAD
-Flask
-yfinance
-pandas
+flask
 numpy
-ta
+pandas
 scikit-learn
 xgboost
 tensorflow
-joblib
-newsapi-python
-textblob
-python-dotenv
+matplotlib
+requests
 gunicorn
-=======
-
->>>>>>> 344f55387b01d9b1e418d42208ab11c32e4e0e05
