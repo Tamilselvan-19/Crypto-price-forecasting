@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🚀 Crypto AI Predictor</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: white;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            margin: 40px auto;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.08);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        }
+
+        h2, h3 {
+            text-align: center;
+        }
+
+        form {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        input {
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            width: 180px;
+            outline: none;
+        }
+
+        button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            background: #00c6ff;
+            color: black;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #00a2d4;
+        }
+
+        .info-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.4);
+        }
+
+        .prediction-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .prediction-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        canvas {
+            margin-top: 25px;
+            background: white;
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        .error {
+            color: #ff4d4d;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+<div class="card">
+
+<h2>🚀 Advanced Crypto AI Predictor</h2>
+
+<form method="POST">
+    <input type="text" name="stock" placeholder="BTC-USD" required>
+    <input type="number" name="no_of_days" placeholder="Days" min="1" max="30" required>
+    <button type="submit">Predict</button>
+</form>
+
+{% if error %}
+    <div class="error">{{ error }}</div>
+{% endif %}
+
+{% if current_price %}
+
+<div class="info-box">
+    <h3>{{ symbol }}</h3>
+    <p><b>Current Price:</b> ${{ current_price }}</p>
+    <p><b>Sentiment:</b> {{ sentiment_label }} (Score: {{ sentiment }})</p>
+</div>
+
+<div class="info-box">
+    <h3>📅 Future Predictions</h3>
+    <div class="prediction-list">
+        {% for price in future %}
+            <div class="prediction-item">
+                Day {{ loop.index }}<br>
+                <b>${{ price }}</b>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<h3>📈 Original vs Predicted Price</h3>
+
+<canvas id="priceChart" height="100"></canvas>
+
+<!-- SAFE JSON DATA -->
+<script id="chart-data" type="application/json">
+{
+    "labels": {{ labels | tojson }},
+    "real": {{ real_prices | tojson }},
+    "predicted": {{ predicted_line | tojson }}
+}
+</script>
+
+<script>
+(function() {
+
+    const raw = document.getElementById("chart-data").textContent;
+    const data = JSON.parse(raw);
+
+    if (!data.labels || data.labels.length === 0) return;
+
+    const ctx = document.getElementById("priceChart");
+
+    new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: data.labels,
+            datasets: [
+                {
+                    label: "Original Price",
+                    data: data.real,
+                    borderColor: "#00c6ff",
+                    borderWidth: 2,
+                    tension: 0.3
+                },
+                {
+                    label: "Predicted Price",
+                    data: data.predicted,
+                    borderColor: "#ff4d4d",
+                    borderDash: [6,6],
+                    borderWidth: 2,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: "black"
+                    }
+                }
+            }
+        }
+    });
+
+})();
+</script>
+
+{% endif %}
+
+</div>
+</div>
+
+</body>
+</html>

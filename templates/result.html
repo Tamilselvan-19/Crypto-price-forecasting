@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="text-center mb-4">
+    Results for {{ stock }}
+</h2>
+
+{% if error %}
+
+    <div class="alert alert-danger text-center">
+        {{ error }}
+    </div>
+
+{% else %}
+
+<div class="card p-4 shadow-custom mb-4">
+
+    <h4 class="mb-3">📊 Original Closing Prices</h4>
+    <img src="{{ original_plot }}"
+         class="img-fluid rounded shadow-sm">
+
+</div>
+
+<div class="card p-4 shadow-custom mb-4">
+
+    <h4 class="mb-3">📈 Actual vs Predicted</h4>
+    <img src="{{ predicted_plot }}"
+         class="img-fluid rounded shadow-sm">
+
+</div>
+
+<div class="card p-4 shadow-custom mb-4">
+
+    <h4 class="mb-3">🔮 Future Predictions</h4>
+    <img src="{{ future_plot }}"
+         class="img-fluid rounded shadow-sm">
+
+</div>
+
+<div class="card p-4 shadow-custom">
+
+    <h4 class="mb-3">📅 Future Price Table</h4>
+
+    <table class="table table-striped table-bordered mt-3">
+        <thead class="table-dark">
+            <tr>
+                <th>Day</th>
+                <th>Predicted Close Price ($)</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for price in future_predictions %}
+            <tr>
+                <td>Day {{ loop.index }}</td>
+                <td>{{ price | round(2) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+{% endif %}
+
+<div class="text-center mt-4">
+    <a href="/" class="btn btn-secondary">
+        Back to Home
+    </a>
+</div>
+
+{% endblock %}
