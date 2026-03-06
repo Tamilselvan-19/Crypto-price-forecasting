@@ -3,7 +3,8 @@ numpy
 pandas
 scikit-learn
 xgboost
-tensorflow
-matplotlib
+tensorflow==2.15.0
+keras
+joblib
 requests
-gunicorn
+python-dotenv
