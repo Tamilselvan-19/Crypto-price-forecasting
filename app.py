@@ -16,15 +16,10 @@ from tensorflow.keras.models import load_model
 from newsapi import NewsApiClient
 from textblob import TextBlob
 from dotenv import load_dotenv
-import os
-
-if os.path.exists("models/lstm.keras"):
-    model = load_model("models/lstm.keras")
-else:
-    print("Model not found")
 
 # ================= LOAD ENV =================
 load_dotenv()
+
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
 if not NEWS_API_KEY:
@@ -42,17 +37,22 @@ FEATURES = [
 ]
 
 # ================= LOAD MODELS =================
-print("🔄 Loading models...")
+print("🔄 Loading AI models...")
 
-lstm = load_model("model_lstm.keras")
-gru = load_model("model_gru.keras")
-cnn = load_model("model_cnn_lstm.keras")
+try:
+    lstm = load_model("models/lstm.keras")
+    gru = load_model("models/gru.keras")
+    cnn = load_model("models/cnn_lstm.keras")
 
-xgb = joblib.load("xgb_model.pkl")
-meta_model = joblib.load("meta_model.pkl")
-scaler = joblib.load("scaler.save")
+    xgb = joblib.load("models/xgb.pkl")
+    meta_model = joblib.load("models/meta.pkl")
+    scaler = joblib.load("models/scaler.pkl")
 
-print("✅ Models loaded successfully!")
+    print("✅ All models loaded successfully!")
+
+except Exception as e:
+    print("❌ Error loading models")
+    print(e)
 
 # ================= FLASK APP =================
 app = Flask(__name__)
@@ -68,13 +68,20 @@ def get_sentiment(symbol):
         )
 
         articles = news.get("articles", [])
+
         if not articles:
             return 0
 
         scores = []
+
         for article in articles:
-            text = (article.get("title", "") or "") + " " + \
-                   (article.get("description", "") or "")
+
+            text = (
+                (article.get("title", "") or "") +
+                " " +
+                (article.get("description", "") or "")
+            )
+
             blob = TextBlob(text)
             scores.append(blob.sentiment.polarity)
 
@@ -87,7 +94,9 @@ def get_sentiment(symbol):
 # ================= MAIN ROUTE =================
 @app.route("/", methods=["GET", "POST"])
 def home():
+
     try:
+
         # ========= USER INPUT =========
         if request.method == "POST":
             SYMBOL = request.form.get("stock", "BTC-USD").upper().strip()
@@ -99,16 +108,20 @@ def home():
         # ========= DOWNLOAD DATA =========
         df = yf.download(SYMBOL, period="3y")
 
-        if df is None or df.empty or len(df) < 100:
+        if df is None or df.empty:
             return render_template("index.html",
-                                   error="❌ Not enough historical data.")
+                                   error="❌ Failed to fetch crypto data")
+
+        if len(df) < 100:
+            return render_template("index.html",
+                                   error="❌ Not enough historical data")
 
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
 
         if len(df) < WINDOW:
             return render_template("index.html",
-                                   error="❌ Not enough data.")
+                                   error="❌ Not enough data")
 
         close = df["Close"].squeeze()
 
@@ -117,8 +130,10 @@ def home():
         df["EMA_30"] = ta.trend.ema_indicator(close, 30)
         df["RSI"] = ta.momentum.rsi(close, 14)
         df["MACD"] = ta.trend.macd(close)
+
         df["BB_High"] = ta.volatility.bollinger_hband(close)
         df["BB_Low"] = ta.volatility.bollinger_lband(close)
+
         df["ATR"] = ta.volatility.average_true_range(
             df["High"], df["Low"], close
         )
@@ -127,7 +142,7 @@ def home():
 
         if len(df) < WINDOW:
             return render_template("index.html",
-                                   error="❌ Not enough processed data.")
+                                   error="❌ Not enough processed data")
 
         data = df[FEATURES]
 
@@ -138,7 +153,6 @@ def home():
         current_window = last_window.copy()
 
         future_prices = []
-        scaled_predictions = []
 
         # ========= PREDICTION LOOP =========
         for _ in range(DAYS_TO_PREDICT):
@@ -148,14 +162,15 @@ def home():
             lstm_p = lstm.predict(X_input, verbose=0)[0][0]
             gru_p = gru.predict(X_input, verbose=0)[0][0]
             cnn_p = cnn.predict(X_input, verbose=0)[0][0]
+
             xgb_p = xgb.predict(current_window.reshape(1, -1))[0]
 
             meta_input = np.array([[lstm_p, gru_p, cnn_p, xgb_p]])
+
             scaled_pred = meta_model.predict(meta_input)[0]
 
-            scaled_predictions.append(scaled_pred)
-
             dummy = np.zeros((1, len(FEATURES)))
+
             dummy[0, FEATURES.index("Close")] = scaled_pred
 
             real_price = scaler.inverse_transform(dummy)[0][
@@ -165,7 +180,9 @@ def home():
             future_prices.append(round(float(real_price), 2))
 
             new_row = current_window[-1].copy()
+
             new_row[FEATURES.index("Close")] = scaled_pred
+
             current_window = np.vstack([current_window[1:], new_row])
 
         current_real_price = round(float(df["Close"].iloc[-1]), 2)
@@ -211,5 +228,10 @@ def home():
 
 # ================= RUN =================
 if __name__ == "__main__":
+
     port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+
+    app.run(
+        host="0.0.0.0",
+        port=port
+    )
