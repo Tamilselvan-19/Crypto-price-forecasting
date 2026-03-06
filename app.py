@@ -16,6 +16,12 @@ from tensorflow.keras.models import load_model
 from newsapi import NewsApiClient
 from textblob import TextBlob
 from dotenv import load_dotenv
+import os
+
+if os.path.exists("models/lstm.keras"):
+    model = load_model("models/lstm.keras")
+else:
+    print("Model not found")
 
 # ================= LOAD ENV =================
 load_dotenv()
@@ -205,4 +211,5 @@ def home():
 
 # ================= RUN =================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
