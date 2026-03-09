@@ -1,5 +1,5 @@
 # ==========================================
-# 🚀 ADVANCED CRYPTO AI PREDICTOR + NEWS AI
+# 🚀 ADVANCED CRYPTO AI PREDICTOR + NEWS AI + BLOCKCHAIN
 # ==========================================
 
 import os
@@ -15,6 +15,9 @@ from tensorflow.keras.models import load_model
 from newsapi import NewsApiClient
 from textblob import TextBlob
 from dotenv import load_dotenv
+
+# ✅ Blockchain import
+from blockchain import Blockchain
 
 
 # ================= LOAD ENV =================
@@ -72,6 +75,9 @@ print("🚀 Model loading completed")
 
 # ================= FLASK =================
 app = Flask(__name__)
+
+# ✅ Initialize Blockchain
+blockchain = Blockchain()
 
 
 # ================= SENTIMENT =================
@@ -187,7 +193,12 @@ def home():
                 FEATURES.index("Close")
             ]
 
-            future_prices.append(round(float(real_price), 2))
+            real_price = round(float(real_price), 2)
+
+            future_prices.append(real_price)
+
+            # ✅ Store prediction in Blockchain
+            blockchain.add_prediction(SYMBOL, real_price)
 
             new_row = current_window[-1].copy()
             new_row[FEATURES.index("Close")] = scaled_pred
@@ -234,9 +245,21 @@ def home():
         return render_template("index.html", error=str(e))
 
 
+# ================= VIEW BLOCKCHAIN =================
+@app.route("/blockchain")
+def view_blockchain():
+
+    chain = blockchain.show_chain()
+
+    return {
+        "length": len(chain),
+        "chain": chain
+    }
+
+
 # ================= RUN =================
 if __name__ == "__main__":
 
-    port = int(os.environ.get("PORT", 10000))
+    port = int(os.environ.get("PORT", 5000))
 
     app.run(host="0.0.0.0", port=port)
