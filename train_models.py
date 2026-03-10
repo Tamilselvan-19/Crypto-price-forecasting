@@ -41,7 +41,7 @@ from tensorflow.keras.optimizers import Adam
 
 SYMBOL = "BTC-USD"
 WINDOW = 90
-EPOCHS = 5
+EPOCHS = 30
 BATCH_SIZE = 32
 
 
