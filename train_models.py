@@ -12,14 +12,7 @@ import math
 import joblib
 
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import (
-    mean_squared_error,
-    mean_absolute_error,
-    mean_absolute_percentage_error,
-    r2_score,
-    f1_score
-)
-
+from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, r2_score, f1_score
 from xgboost import XGBRegressor
 
 from tensorflow.keras.models import Sequential, Model
@@ -41,7 +34,7 @@ from tensorflow.keras.optimizers import Adam
 
 SYMBOL = "BTC-USD"
 WINDOW = 90
-EPOCHS = 30
+EPOCHS = 1
 BATCH_SIZE = 32
 
 
@@ -61,14 +54,16 @@ close = df["Close"].squeeze()
 
 df["EMA_10"] = ta.trend.ema_indicator(close, 10)
 df["EMA_30"] = ta.trend.ema_indicator(close, 30)
+
 df["RSI"] = ta.momentum.rsi(close, 14)
 df["MACD"] = ta.trend.macd(close)
 
 df["BB_High"] = ta.volatility.bollinger_hband(close)
 df["BB_Low"] = ta.volatility.bollinger_lband(close)
+
 df["ATR"] = ta.volatility.average_true_range(df["High"], df["Low"], close)
 
-# Momentum indicators
+# momentum indicators
 df["Momentum"] = close.diff()
 df["ROC"] = ta.momentum.roc(close)
 df["CCI"] = ta.trend.cci(df["High"], df["Low"], close)
@@ -77,11 +72,12 @@ df["ADX"] = ta.trend.adx(df["High"], df["Low"], close)
 df.dropna(inplace=True)
 
 
+# IMPORTANT: DO NOT CHANGE ORDER
 FEATURES = [
-    "Open","High","Low","Close","Volume",
-    "EMA_10","EMA_30","RSI","MACD",
-    "BB_High","BB_Low","ATR",
-    "Momentum","ROC","CCI","ADX"
+"Open","High","Low","Close","Volume",
+"EMA_10","EMA_30","RSI","MACD",
+"BB_High","BB_Low","ATR",
+"Momentum","ROC","CCI","ADX"
 ]
 
 data = df[FEATURES]
@@ -90,9 +86,11 @@ data = df[FEATURES]
 # ================= SCALING =================
 
 scaler = MinMaxScaler()
+
 scaled = scaler.fit_transform(data)
 
-X, y = [], []
+X = []
+y = []
 
 for i in range(WINDOW, len(scaled)):
     X.append(scaled[i-WINDOW:i])
@@ -103,8 +101,11 @@ y = np.array(y)
 
 split = int(len(X) * 0.9)
 
-X_train, X_test = X[:split], X[split:]
-y_train, y_test = y[:split], y[split:]
+X_train = X[:split]
+X_test = X[split:]
+
+y_train = y[:split]
+y_test = y[split:]
 
 
 # ================= MODEL DEFINITIONS =================
@@ -178,7 +179,7 @@ def build_transformer():
     return model
 
 
-# ================= TEMPORAL ATTENTION FUSION =================
+# ================= TEMPORAL FUSION =================
 
 def build_temporal_fusion():
 
@@ -210,45 +211,35 @@ early = EarlyStopping(patience=7, restore_best_weights=True)
 
 print("Training LSTM...")
 lstm = build_lstm()
-lstm.fit(X_train, y_train, epochs=EPOCHS,
-         batch_size=BATCH_SIZE,
-         validation_data=(X_test,y_test),
-         callbacks=[early])
+lstm.fit(X_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE,
+         validation_data=(X_test, y_test), callbacks=[early])
 
 print("Training GRU...")
 gru = build_gru()
-gru.fit(X_train, y_train, epochs=EPOCHS,
-        batch_size=BATCH_SIZE,
-        validation_data=(X_test,y_test),
-        callbacks=[early])
+gru.fit(X_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE,
+        validation_data=(X_test, y_test), callbacks=[early])
 
 print("Training CNN-LSTM...")
 cnn = build_cnn_lstm()
-cnn.fit(X_train, y_train, epochs=EPOCHS,
-        batch_size=BATCH_SIZE,
-        validation_data=(X_test,y_test),
-        callbacks=[early])
+cnn.fit(X_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE,
+        validation_data=(X_test, y_test), callbacks=[early])
 
 print("Training Transformer...")
 transformer = build_transformer()
-transformer.fit(X_train, y_train, epochs=EPOCHS,
-                batch_size=BATCH_SIZE,
-                validation_data=(X_test,y_test),
-                callbacks=[early])
+transformer.fit(X_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE,
+                validation_data=(X_test, y_test), callbacks=[early])
 
-print("Training Temporal Fusion Model...")
+print("Training Temporal Fusion...")
 fusion = build_temporal_fusion()
-fusion.fit(X_train, y_train, epochs=EPOCHS,
-           batch_size=BATCH_SIZE,
-           validation_data=(X_test,y_test),
-           callbacks=[early])
+fusion.fit(X_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE,
+           validation_data=(X_test, y_test), callbacks=[early])
 
 
 # ================= XGBOOST =================
 
-X_flat = X.reshape(X.shape[0], -1)
-
 print("Training XGBoost...")
+
+X_flat = X.reshape(X.shape[0], -1)
 
 xgb = XGBRegressor(
     n_estimators=400,

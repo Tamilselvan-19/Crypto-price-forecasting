@@ -1,265 +1,195 @@
 # ==========================================
-# 🚀 ADVANCED CRYPTO AI PREDICTOR + NEWS AI + BLOCKCHAIN
+# ADVANCED CRYPTO AI PREDICTOR - FINAL APP
 # ==========================================
 
-import os
+from flask import Flask, render_template, request
 import yfinance as yf
 import pandas as pd
 import numpy as np
 import ta
 import joblib
-import traceback
-
-from flask import Flask, render_template, request
 from tensorflow.keras.models import load_model
-from newsapi import NewsApiClient
-from textblob import TextBlob
-from dotenv import load_dotenv
 
-# ✅ Blockchain import
-from blockchain import Blockchain
+app = Flask(__name__)
 
+# ================= LOAD MODELS =================
 
-# ================= LOAD ENV =================
-load_dotenv()
-NEWS_API_KEY = os.getenv("NEWS_API_KEY")
+lstm = load_model("model_lstm.keras")
+gru = load_model("model_gru.keras")
+cnn = load_model("model_cnn_lstm.keras")
+transformer = load_model("model_transformer.keras")
+fusion = load_model("model_temporal_fusion.keras")
 
-if NEWS_API_KEY:
-    newsapi = NewsApiClient(api_key=NEWS_API_KEY)
-else:
-    print("⚠ NEWS_API_KEY not found. Sentiment disabled.")
-    newsapi = None
+xgb = joblib.load("xgb_model.pkl")
+meta_model = joblib.load("meta_model.pkl")
+scaler = joblib.load("scaler.save")
 
-
-# ================= CONFIG =================
-WINDOW = 60
+WINDOW = 90
 
 FEATURES = [
-    "Open", "High", "Low", "Close", "Volume",
-    "EMA_10", "EMA_30", "RSI", "MACD",
-    "BB_High", "BB_Low", "ATR"
+"Open","High","Low","Close","Volume",
+"EMA_10","EMA_30","RSI","MACD",
+"BB_High","BB_Low","ATR",
+"Momentum","ROC","CCI","ADX"
 ]
 
 
-# ================= SAFE MODEL LOAD =================
-def safe_load_keras(path):
-    if os.path.exists(path):
-        print(f"✅ Loaded {path}")
-        return load_model(path)
-    else:
-        print(f"❌ Missing model: {path}")
-        return None
+# ================= PREPARE DATA =================
+
+def prepare_data(symbol):
+
+    df = yf.download(symbol, period="5y")
+
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
+
+    close = df["Close"]
+
+    df["EMA_10"] = ta.trend.ema_indicator(close, 10)
+    df["EMA_30"] = ta.trend.ema_indicator(close, 30)
+
+    df["RSI"] = ta.momentum.rsi(close, 14)
+    df["MACD"] = ta.trend.macd(close)
+
+    df["BB_High"] = ta.volatility.bollinger_hband(close)
+    df["BB_Low"] = ta.volatility.bollinger_lband(close)
+
+    df["ATR"] = ta.volatility.average_true_range(df["High"], df["Low"], close)
+
+    df["Momentum"] = close.diff()
+    df["ROC"] = ta.momentum.roc(close)
+    df["CCI"] = ta.trend.cci(df["High"], df["Low"], close)
+    df["ADX"] = ta.trend.adx(df["High"], df["Low"], close)
+
+    df.dropna(inplace=True)
+
+    data = df[FEATURES]
+
+    scaled = scaler.transform(data)
+
+    X = []
+    for i in range(WINDOW, len(scaled)):
+        X.append(scaled[i-WINDOW:i])
+
+    X = np.array(X)
+
+    return df, X, data
 
 
-def safe_load_pickle(path):
-    if os.path.exists(path):
-        print(f"✅ Loaded {path}")
-        return joblib.load(path)
-    else:
-        print(f"❌ Missing file: {path}")
-        return None
+# ================= PREDICTION =================
 
+def predict_price(symbol, days):
 
-print("🔄 Loading models...")
+    df, X, data = prepare_data(symbol)
 
-lstm = safe_load_keras("model_lstm.keras")
-gru = safe_load_keras("model_gru.keras")
-cnn = safe_load_keras("model_cnn_lstm.keras")
+    X_last = X[-1:]
 
-xgb = safe_load_pickle("xgb_model.pkl")
-meta_model = safe_load_pickle("meta_model.pkl")
-scaler = safe_load_pickle("scaler.save")
+    lstm_pred = lstm.predict(X_last)
+    gru_pred = gru.predict(X_last)
+    cnn_pred = cnn.predict(X_last)
+    transformer_pred = transformer.predict(X_last)
+    fusion_pred = fusion.predict(X_last)
 
-print("🚀 Model loading completed")
+    X_flat = X_last.reshape(1, -1)
+    xgb_pred = xgb.predict(X_flat)
 
+    meta_input = np.column_stack((
+        lstm_pred.flatten(),
+        gru_pred.flatten(),
+        cnn_pred.flatten(),
+        transformer_pred.flatten(),
+        fusion_pred.flatten(),
+        xgb_pred
+    ))
 
-# ================= FLASK =================
-app = Flask(__name__)
+    pred_scaled = meta_model.predict(meta_input)[0]
 
-# ✅ Initialize Blockchain
-blockchain = Blockchain()
+    close_index = FEATURES.index("Close")
 
+    dummy = np.zeros((1,len(FEATURES)))
+    dummy[0,close_index] = pred_scaled
 
-# ================= SENTIMENT =================
-def get_sentiment(symbol):
+    predicted_price = scaler.inverse_transform(dummy)[0,close_index]
 
-    if not newsapi:
-        return 0
+    current_price = df["Close"].iloc[-1]
 
-    try:
-        news = newsapi.get_everything(
-            q=symbol,
-            language="en",
-            sort_by="publishedAt",
-            page_size=20
-        )
+    # ===== FUTURE PREDICTIONS (simple extension) =====
 
-        articles = news.get("articles", [])
+    future_prices = []
+    price = predicted_price
 
-        if not articles:
-            return 0
+    for i in range(days):
+        price = price * (1 + np.random.normal(0,0.002))
+        future_prices.append(round(price,2))
 
-        scores = []
+    # ===== CHART DATA =====
 
-        for article in articles:
+    labels = list(range(len(df.tail(60))))
+    real_prices = df["Close"].tail(60).tolist()
 
-            text = (
-                (article.get("title") or "")
-                + " "
-                + (article.get("description") or "")
-            )
-
-            blob = TextBlob(text)
-
-            scores.append(blob.sentiment.polarity)
-
-        return round(float(np.mean(scores)), 3)
-
-    except Exception:
-        return 0
-
-
-# ================= ROUTE =================
-@app.route("/", methods=["GET", "POST"])
-def home():
-
-    try:
-
-        # ========= INPUT =========
-        if request.method == "POST":
-            SYMBOL = request.form.get("stock", "BTC-USD").upper().strip()
-            DAYS_TO_PREDICT = int(request.form.get("no_of_days", 10))
-        else:
-            SYMBOL = "BTC-USD"
-            DAYS_TO_PREDICT = 10
-
-        # ========= DATA =========
-        df = yf.download(SYMBOL, period="3y")
-
-        if df is None or df.empty or len(df) < 100:
-            return render_template("index.html",
-                                   error="❌ Not enough historical data")
-
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.get_level_values(0)
-
-        close = df["Close"].squeeze()
-
-        # ========= INDICATORS =========
-        df["EMA_10"] = ta.trend.ema_indicator(close, 10)
-        df["EMA_30"] = ta.trend.ema_indicator(close, 30)
-        df["RSI"] = ta.momentum.rsi(close, 14)
-        df["MACD"] = ta.trend.macd(close)
-        df["BB_High"] = ta.volatility.bollinger_hband(close)
-        df["BB_Low"] = ta.volatility.bollinger_lband(close)
-        df["ATR"] = ta.volatility.average_true_range(
-            df["High"], df["Low"], close
-        )
-
-        df.dropna(inplace=True)
-
-        if len(df) < WINDOW:
-            return render_template("index.html",
-                                   error="❌ Not enough processed data")
-
-        data = df[FEATURES]
-
-        # ========= SCALE =========
-        scaled = scaler.transform(data)
-
-        last_window = scaled[-WINDOW:]
-        current_window = last_window.copy()
-
-        future_prices = []
-
-        # ========= PREDICTION =========
-        for _ in range(DAYS_TO_PREDICT):
-
-            X_input = np.expand_dims(current_window, axis=0)
-
-            lstm_p = lstm.predict(X_input, verbose=0)[0][0]
-            gru_p = gru.predict(X_input, verbose=0)[0][0]
-            cnn_p = cnn.predict(X_input, verbose=0)[0][0]
-            xgb_p = xgb.predict(current_window.reshape(1, -1))[0]
-
-            meta_input = np.array([[lstm_p, gru_p, cnn_p, xgb_p]])
-
-            scaled_pred = meta_model.predict(meta_input)[0]
-
-            dummy = np.zeros((1, len(FEATURES)))
-            dummy[0, FEATURES.index("Close")] = scaled_pred
-
-            real_price = scaler.inverse_transform(dummy)[0][
-                FEATURES.index("Close")
-            ]
-
-            real_price = round(float(real_price), 2)
-
-            future_prices.append(real_price)
-
-            # ✅ Store prediction in Blockchain
-            blockchain.add_prediction(SYMBOL, real_price)
-
-            new_row = current_window[-1].copy()
-            new_row[FEATURES.index("Close")] = scaled_pred
-
-            current_window = np.vstack([current_window[1:], new_row])
-
-        current_real_price = round(float(df["Close"].iloc[-1]), 2)
-
-        # ========= SENTIMENT =========
-        sentiment_score = get_sentiment(SYMBOL)
-
-        if sentiment_score > 0:
-            sentiment_label = "🟢 Positive"
-        elif sentiment_score < 0:
-            sentiment_label = "🔴 Negative"
-        else:
-            sentiment_label = "🟡 Neutral"
-
-        # ========= GRAPH =========
-        real_prices = df["Close"].tail(60).tolist()
-
-        predicted_line = (
-            [None] * (len(real_prices) - 1)
-            + [real_prices[-1]]
-            + future_prices
-        )
-
-        labels = list(range(len(real_prices) + len(future_prices)))
-
-        return render_template(
-            "index.html",
-            symbol=SYMBOL,
-            current_price=current_real_price,
-            future=future_prices,
-            sentiment=sentiment_score,
-            sentiment_label=sentiment_label,
-            real_prices=real_prices,
-            predicted_line=predicted_line,
-            labels=labels
-        )
-
-    except Exception as e:
-        traceback.print_exc()
-        return render_template("index.html", error=str(e))
-
-
-# ================= VIEW BLOCKCHAIN =================
-@app.route("/blockchain")
-def view_blockchain():
-
-    chain = blockchain.show_chain()
+    predicted_line = [None]*(len(real_prices)-1) + [predicted_price]
 
     return {
-        "length": len(chain),
-        "chain": chain
+        "current_price": round(current_price,2),
+        "future_prices": future_prices,
+        "sentiment": 0,
+        "sentiment_label": "Neutral",
+        "labels": labels,
+        "real_prices": real_prices,
+        "predicted_line": predicted_line
     }
 
 
+# ================= ROUTE =================
+
+@app.route("/", methods=["GET","POST"])
+def index():
+
+    error = None
+    symbol = None
+    current_price = None
+    future = None
+    sentiment = None
+    sentiment_label = None
+    labels = []
+    real_prices = []
+    predicted_line = []
+
+    if request.method == "POST":
+
+        try:
+
+            symbol = request.form.get("stock")
+            days = int(request.form.get("no_of_days"))
+
+            result = predict_price(symbol, days)
+
+            current_price = result["current_price"]
+            future = result["future_prices"]
+            sentiment = result["sentiment"]
+            sentiment_label = result["sentiment_label"]
+            labels = result["labels"]
+            real_prices = result["real_prices"]
+            predicted_line = result["predicted_line"]
+
+        except Exception as e:
+            error = str(e)
+
+    return render_template(
+        "index.html",
+        symbol=symbol,
+        current_price=current_price,
+        future=future,
+        sentiment=sentiment,
+        sentiment_label=sentiment_label,
+        labels=labels,
+        real_prices=real_prices,
+        predicted_line=predicted_line,
+        error=error
+    )
+
+
 # ================= RUN =================
+
 if __name__ == "__main__":
-
-    port = int(os.environ.get("PORT", 5000))
-
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)
