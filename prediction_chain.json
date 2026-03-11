@@ -1,0 +1,164 @@
+[
+  {
+    "index": 1,
+    "timestamp": 1773216979.8968604,
+    "data": {
+      "type": "genesis",
+      "message": "Crypto AI Prediction System Genesis Block",
+      "system": "Hybrid LSTM+GRU+CNN+Transformer+XGBoost with News Sentiment"
+    },
+    "previous_hash": "0",
+    "hash": "c0ad52fa4f2663cee96dd51e59ca84aa11ad70da6aea4126fd3dc7f6fc963610"
+  },
+  {
+    "index": 2,
+    "timestamp": 1773216979.8979025,
+    "data": {
+      "type": "prediction",
+      "symbol": "BTC-USD",
+      "current_price": 44000.0,
+      "timestamp_iso": "2026-03-11T13:46:19.897902",
+      "individual_models": {
+        "lstm": 45000.5,
+        "gru": 45200.3,
+        "cnn_lstm": 44800.7,
+        "transformer": 45100.2,
+        "temporal_fusion": 45300.1,
+        "xgboost": 44950.0
+      },
+      "sentiment_analysis": {
+        "news_sentiment_score": 0.35,
+        "news_sentiment_label": "Bullish \ud83d\udcc8",
+        "news_sentiment_percent": 67,
+        "technical_sentiment_score": 0.15,
+        "technical_sentiment_label": "Neutral \u27a1\ufe0f",
+        "combined_sentiment_score": 0.25
+      },
+      "final_prediction": 45200.0,
+      "expected_change_percent": 2.727272727272727,
+      "meta_model_weights": {}
+    },
+    "previous_hash": "c0ad52fa4f2663cee96dd51e59ca84aa11ad70da6aea4126fd3dc7f6fc963610",
+    "hash": "82cedcb683c3d242eaa9d5243ad46ccae76abe0381ae9e7abb359f7f4997ca1c"
+  },
+  {
+    "index": 3,
+    "timestamp": 1773218627.5693607,
+    "timestamp_iso": "2026-03-11T14:13:47.569360",
+    "data": {
+      "type": "prediction",
+      "symbol": "BTC-USD",
+      "current_price": 44000.0,
+      "individual_models": {
+        "lstm": 45000.5,
+        "gru": 45200.3,
+        "cnn_lstm": 44800.7,
+        "transformer": 45100.2,
+        "temporal_fusion": 45300.1,
+        "xgboost": 44950.0
+      },
+      "sentiment_analysis": {
+        "news_sentiment_score": 0.35,
+        "news_sentiment_label": "Bullish \ud83d\udcc8",
+        "news_sentiment_percent": 67,
+        "technical_sentiment_score": 0.15,
+        "technical_sentiment_label": "Neutral \u27a1\ufe0f",
+        "combined_sentiment_score": 0.25
+      },
+      "final_prediction": 45200.0,
+      "expected_change_percent": 2.727272727272727
+    },
+    "previous_hash": "82cedcb683c3d242eaa9d5243ad46ccae76abe0381ae9e7abb359f7f4997ca1c",
+    "hash": "0f1423f1862e0a12234e3384e68626eb7377cfac43040eb5647b482359014d2a"
+  },
+  {
+    "index": 4,
+    "timestamp": 1773218662.8210657,
+    "timestamp_iso": "2026-03-11T14:14:22.821065",
+    "data": {
+      "type": "prediction",
+      "symbol": "BTC-USD",
+      "current_price": 69683.3984375,
+      "individual_models": {
+        "lstm": 74145.26618522916,
+        "gru": 69267.9608565934,
+        "cnn_lstm": 74258.83500455316,
+        "transformer": 60148.274800276806,
+        "temporal_fusion": 60973.0944249017,
+        "xgboost": 71344.09003176127
+      },
+      "sentiment_analysis": {
+        "news_sentiment_score": -0.07,
+        "news_sentiment_label": "Neutral \u27a1\ufe0f",
+        "news_sentiment_percent": 46,
+        "technical_sentiment_score": 0.611,
+        "technical_sentiment_label": "Very Bullish \ud83d\ude80",
+        "combined_sentiment_score": 0.27049999999999996
+      },
+      "final_prediction": 69187.08417925928,
+      "expected_change_percent": -0.7122417525113495
+    },
+    "previous_hash": "0f1423f1862e0a12234e3384e68626eb7377cfac43040eb5647b482359014d2a",
+    "hash": "0d5e4bf78ba79b4fdeda33faed78fbc97c815b2df5377e6756539fdc818c767f"
+  },
+  {
+    "index": 5,
+    "timestamp": 1773218747.8588822,
+    "timestamp_iso": "2026-03-11T14:15:47.858882",
+    "data": {
+      "type": "prediction",
+      "symbol": "BTC-USD",
+      "current_price": 69683.6640625,
+      "individual_models": {
+        "lstm": 74145.26618522916,
+        "gru": 69267.9608565934,
+        "cnn_lstm": 74258.83500455316,
+        "transformer": 60148.274800276806,
+        "temporal_fusion": 60973.0944249017,
+        "xgboost": 71344.09003176127
+      },
+      "sentiment_analysis": {
+        "news_sentiment_score": -0.07,
+        "news_sentiment_label": "Neutral \u27a1\ufe0f",
+        "news_sentiment_percent": 46,
+        "technical_sentiment_score": 0.611,
+        "technical_sentiment_label": "Very Bullish \ud83d\ude80",
+        "combined_sentiment_score": 0.27049999999999996
+      },
+      "final_prediction": 69187.08417925928,
+      "expected_change_percent": -0.7126202244407364
+    },
+    "previous_hash": "0d5e4bf78ba79b4fdeda33faed78fbc97c815b2df5377e6756539fdc818c767f",
+    "hash": "d6b6a28e0ca81ac7e6fb0fe75dbb7fbd7e7b56e15ee80f333d36e1a50e44181f"
+  },
+  {
+    "index": 6,
+    "timestamp": 1773239427.3294418,
+    "timestamp_iso": "2026-03-11T20:00:27.329441",
+    "data": {
+      "type": "prediction",
+      "symbol": "BTC-USD",
+      "current_price": 70347.3359375,
+      "individual_models": {
+        "lstm": 74284.32656122735,
+        "gru": 69177.30029117058,
+        "cnn_lstm": 74797.47590258358,
+        "transformer": 59417.89790418642,
+        "temporal_fusion": 60333.66389066161,
+        "xgboost": 71344.09003176127
+      },
+      "sentiment_analysis": {
+        "news_sentiment_score": -0.062,
+        "news_sentiment_label": "Neutral \u27a1\ufe0f",
+        "news_sentiment_percent": 46,
+        "technical_sentiment_score": 0.639,
+        "technical_sentiment_label": "Very Bullish \ud83d\ude80",
+        "combined_sentiment_score": 0.2885
+      },
+      "final_prediction": 69187.08417925928,
+      "expected_change_percent": -1.6493186881611843
+    },
+    "previous_hash": "d6b6a28e0ca81ac7e6fb0fe75dbb7fbd7e7b56e15ee80f333d36e1a50e44181f",
+    "hash": "f63201bd595d91891829e41fda05af577d18cadb6c6d98ca7e27f669402125b1"
+  }
+]

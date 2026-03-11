@@ -1,21 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>🚀 Crypto AI Predictor</title>
+    <title>🚀 Crypto AI Predictor - News Sentiment Integrated</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
             color: white;
+            min-height: 100vh;
         }
 
         .container {
-            width: 90%;
-            max-width: 1000px;
+            width: 95%;
+            max-width: 1400px;
             margin: 40px auto;
+            padding: 0 20px;
         }
 
         .card {
@@ -24,10 +31,12 @@
             border-radius: 15px;
             backdrop-filter: blur(12px);
             box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            margin-bottom: 30px;
         }
 
         h2, h3 {
             text-align: center;
+            margin-bottom: 20px;
         }
 
         form {
@@ -38,16 +47,17 @@
             justify-content: center;
         }
 
-        input {
-            padding: 10px;
+        input, select {
+            padding: 12px;
             border-radius: 8px;
             border: none;
-            width: 180px;
+            width: 200px;
             outline: none;
+            font-size: 14px;
         }
 
         button {
-            padding: 10px 20px;
+            padding: 12px 24px;
             border-radius: 8px;
             border: none;
             cursor: pointer;
@@ -55,24 +65,174 @@
             background: #00c6ff;
             color: black;
             transition: 0.3s;
+            font-size: 14px;
         }
 
         button:hover {
             background: #00a2d4;
+            transform: translateY(-2px);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
         }
 
         .info-box {
-            margin-top: 20px;
-            padding: 15px;
+            padding: 20px;
             border-radius: 10px;
             background: rgba(0,0,0,0.4);
         }
 
+        .price-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .price-card {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .price-card:hover {
+            transform: translateY(-3px);
+            background: rgba(255,255,255,0.15);
+        }
+
+        .price-card h4 {
+            color: #00c6ff;
+            margin-bottom: 5px;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .price-card .value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .positive { color: #00b894; }
+        .negative { color: #ff6b6b; }
+
+        /* Model Results Grid */
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .model-card {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 3px solid #00c6ff;
+        }
+
+        .model-card h5 {
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 5px;
+        }
+
+        .model-card .pred-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        /* Sentiment Styles - FIXED */
+        .sentiment-container {
+            padding: 20px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.3);
+            margin-bottom: 15px;
+        }
+
+        .sentiment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .sentiment-bar-container {
+            width: 100%;
+            height: 30px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .sentiment-bar {
+            height: 100%;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+            transition: width 0.5s ease;
+            width: 0%; /* JS will set this */
+        }
+
+        .sentiment-bar.bullish {
+            background: linear-gradient(90deg, #00b894, #00c6ff);
+        }
+
+        .sentiment-bar.bearish {
+            background: linear-gradient(90deg, #ff6b6b, #ee5a6f);
+        }
+
+        .sentiment-bar.neutral {
+            background: linear-gradient(90deg, #fdcb6e, #e17055);
+        }
+
+        .news-articles {
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .article-item {
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .article-item .source {
+            color: #00c6ff;
+            font-weight: bold;
+        }
+
+        .article-item .sentiment-tag {
+            float: right;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+        }
+
+        .tag-bullish { background: rgba(0, 184, 148, 0.3); color: #00b894; }
+        .tag-bearish { background: rgba(255, 107, 107, 0.3); color: #ff6b6b; }
+        .tag-neutral { background: rgba(253, 203, 110, 0.3); color: #fdcb6e; }
+
+        /* Predictions List */
         .prediction-list {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             gap: 10px;
-            margin-top: 10px;
+            margin-top: 15px;
         }
 
         .prediction-item {
@@ -82,17 +242,61 @@
             text-align: center;
         }
 
+        .prediction-item .day {
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 5px;
+        }
+
+        .prediction-item .price {
+            font-size: 14px;
+            font-weight: bold;
+            color: #00c6ff;
+        }
+
         canvas {
             margin-top: 25px;
             background: white;
             border-radius: 12px;
-            padding: 10px;
+            padding: 15px;
+            max-height: 400px;
         }
 
         .error {
-            color: #ff4d4d;
+            color: #ff6b6b;
             text-align: center;
             font-weight: bold;
+            padding: 15px;
+            background: rgba(255,0,0,0.1);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .badge-news { background: #e74c3c; }
+        .badge-tech { background: #3498db; }
+
+        .blockchain-status {
+            text-align: center;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .blockchain-status a {
+            color: #00c6ff;
+            text-decoration: none;
         }
     </style>
 </head>
@@ -100,103 +304,278 @@
 <body>
 
 <div class="container">
-<div class="card">
+    <div class="card">
+        <h2>🚀 Advanced Crypto AI Predictor</h2>
+        <p style="text-align: center; color: rgba(255,255,255,0.7); margin-bottom: 20px;">
+            LSTM + GRU + CNN-LSTM + Transformer + XGBoost + News API Sentiment
+        </p>
 
-<h2>🚀 Advanced Crypto AI Predictor</h2>
+        <form method="POST">
+            <input type="text" name="stock" placeholder="BTC-USD" value="{{ result.symbol if result else '' }}" required>
+            <input type="number" name="no_of_days" placeholder="Days (1-30)" min="1" max="30" value="7" required>
+            <button type="submit">🔮 Predict</button>
+        </form>
 
-<form method="POST">
-    <input type="text" name="stock" placeholder="BTC-USD" required>
-    <input type="number" name="no_of_days" placeholder="Days" min="1" max="30" required>
-    <button type="submit">Predict</button>
-</form>
+        {% if error %}
+            <div class="error">⚠️ {{ error }}</div>
+        {% endif %}
 
-{% if error %}
-    <div class="error">{{ error }}</div>
-{% endif %}
-
-{% if current_price %}
-
-<div class="info-box">
-    <h3>{{ symbol }}</h3>
-    <p><b>Current Price:</b> ${{ current_price }}</p>
-    <p><b>Sentiment:</b> {{ sentiment_label }} (Score: {{ sentiment }})</p>
-</div>
-
-<div class="info-box">
-    <h3>📅 Future Predictions</h3>
-    <div class="prediction-list">
-        {% for price in future %}
-            <div class="prediction-item">
-                Day {{ loop.index }}<br>
-                <b>${{ price }}</b>
+        {% if result %}
+        
+        <!-- Price Overview -->
+        <div class="info-box" style="margin-bottom: 20px;">
+            <h3>💰 {{ result.symbol }} Price Analysis</h3>
+            <div class="price-grid">
+                <div class="price-card">
+                    <h4>Current Price</h4>
+                    <div class="value">${{ "%.2f"|format(result.current_price) }}</div>
+                </div>
+                <div class="price-card">
+                    <h4>AI Prediction</h4>
+                    <div class="value {{ 'positive' if result.predicted_price > result.current_price else 'negative' }}">
+                        ${{ "%.2f"|format(result.predicted_price) }}
+                    </div>
+                </div>
+                <div class="price-card">
+                    <h4>Expected Change</h4>
+                    <div class="value {{ 'positive' if result.predicted_price > result.current_price else 'negative' }}">
+                        {{ "%.2f"|format(((result.predicted_price - result.current_price) / result.current_price * 100)) }}%
+                    </div>
+                </div>
+                <div class="price-card">
+                    <h4>Confidence</h4>
+                    <div class="value">{{ result.combined_sentiment.percent }}%</div>
+                </div>
             </div>
-        {% endfor %}
-    </div>
-</div>
+        </div>
 
-<h3>📈 Original vs Predicted Price</h3>
+        <div class="grid-2">
+            <!-- Individual Model Predictions -->
+            <div class="info-box">
+                <h3>🤖 Individual Model Predictions</h3>
+                <div class="models-grid">
+                    <div class="model-card">
+                        <h5>LSTM</h5>
+                        <div class="pred-value">${{ "%.0f"|format(result.individual_predictions.lstm) }}</div>
+                    </div>
+                    <div class="model-card">
+                        <h5>GRU</h5>
+                        <div class="pred-value">${{ "%.0f"|format(result.individual_predictions.gru) }}</div>
+                    </div>
+                    <div class="model-card">
+                        <h5>CNN-LSTM</h5>
+                        <div class="pred-value">${{ "%.0f"|format(result.individual_predictions.cnn) }}</div>
+                    </div>
+                    <div class="model-card">
+                        <h5>Transformer</h5>
+                        <div class="pred-value">${{ "%.0f"|format(result.individual_predictions.transformer) }}</div>
+                    </div>
+                    <div class="model-card">
+                        <h5>Temp Fusion</h5>
+                        <div class="pred-value">${{ "%.0f"|format(result.individual_predictions.fusion) }}</div>
+                    </div>
+                    <div class="model-card">
+                        <h5>XGBoost</h5>
+                        <div class="pred-value">${{ "%.0f"|format(result.individual_predictions.xgb) }}</div>
+                    </div>
+                </div>
+                <p style="margin-top: 15px; font-size: 12px; color: rgba(255,255,255,0.6); text-align: center;">
+                    Meta-ensemble combines all models with sentiment analysis for final prediction
+                </p>
+            </div>
 
-<canvas id="priceChart" height="100"></canvas>
+            <!-- Sentiment Analysis -->
+            <div class="info-box">
+                <h3>📊 Market Sentiment Analysis</h3>
+                
+                <!-- News Sentiment - FIXED CSS -->
+                <div class="sentiment-container">
+                    <div class="sentiment-header">
+                        <span>News API Sentiment <span class="badge badge-news">LIVE</span></span>
+                        <span style="font-size: 24px; font-weight: bold;">{{ result.news_sentiment.percent }}%</span>
+                    </div>
+                    <div class="sentiment-bar-container">
+                        <div class="sentiment-bar {{ 'bullish' if result.news_sentiment.percent > 60 else 'bearish' if result.news_sentiment.percent < 40 else 'neutral' }}" 
+                             id="news-sentiment-bar" 
+                             data-percent="{{ result.news_sentiment.percent }}">
+                            {{ result.news_sentiment.label }}
+                        </div>
+                    </div>
+                    <small style="color: rgba(255,255,255,0.6);">
+                        Based on {{ result.news_sentiment.article_count }} recent news articles
+                    </small>
+                    
+                    {% if result.news_sentiment.articles %}
+                    <div class="news-articles">
+                        {% for article in result.news_sentiment.articles %}
+                        <div class="article-item">
+                            <span class="source">{{ article.source }}</span>
+                            <span class="sentiment-tag {{ 'tag-bullish' if article.sentiment > 0.1 else 'tag-bearish' if article.sentiment < -0.1 else 'tag-neutral' }}">
+                                {{ "%.2f"|format(article.sentiment) }}
+                            </span>
+                            <div style="margin-top: 5px; color: rgba(255,255,255,0.8);">
+                                {{ article.title }}
+                            </div>
+                            <small style="color: rgba(255,255,255,0.5);">{{ article.published }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
 
-<!-- SAFE JSON DATA -->
-<script id="chart-data" type="application/json">
-{
-    "labels": {{ labels | tojson }},
-    "real": {{ real_prices | tojson }},
-    "predicted": {{ predicted_line | tojson }}
-}
-</script>
+                <!-- Technical Sentiment - FIXED CSS -->
+                <div class="sentiment-container">
+                    <div class="sentiment-header">
+                        <span>Technical Indicators <span class="badge badge-tech">TA</span></span>
+                        <span style="font-size: 24px; font-weight: bold;">{{ result.technical_sentiment.percent }}%</span>
+                    </div>
+                    <div class="sentiment-bar-container">
+                        <div class="sentiment-bar {{ 'bullish' if result.technical_sentiment.percent > 60 else 'bearish' if result.technical_sentiment.percent < 40 else 'neutral' }}" 
+                             id="tech-sentiment-bar" 
+                             data-percent="{{ result.technical_sentiment.percent }}">
+                            {{ result.technical_sentiment.label }}
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 12px; color: rgba(255,255,255,0.7);">
+                        RSI: {{ result.technical_sentiment.indicators.rsi }} | 
+                        MACD: {{ result.technical_sentiment.indicators.macd }} | 
+                        vs EMA20: {{ result.technical_sentiment.indicators.price_vs_ema20 }}%
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<script>
-(function() {
+        <!-- Future Predictions -->
+        <div class="info-box" style="margin-top: 20px;">
+            <h3>📅 Future Price Predictions ({{ result.future_prices|length }} Days)</h3>
+            <div class="prediction-list">
+                {% for price in result.future_prices %}
+                    <div class="prediction-item">
+                        <div class="day">Day {{ loop.index }}</div>
+                        <div class="price">${{ "%.2f"|format(price) }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
 
-    const raw = document.getElementById("chart-data").textContent;
-    const data = JSON.parse(raw);
+        <!-- Chart -->
+        <h3 style="margin-top: 30px;">📈 Price Chart: Historical vs Predicted</h3>
+        <canvas id="priceChart" height="100"></canvas>
 
-    if (!data.labels || data.labels.length === 0) return;
+        <!-- Chart Data -->
+        <script id="chart-data" type="application/json">
+        {
+            "labels": {{ result.labels | tojson | safe }},
+            "real": {{ result.real_prices | tojson | safe }},
+            "predicted": {{ result.predicted_line | tojson | safe }}
+        }
+        </script>
 
-    const ctx = document.getElementById("priceChart");
-
-    new Chart(ctx, {
-        type: "line",
-        data: {
-            labels: data.labels,
-            datasets: [
-                {
-                    label: "Original Price",
-                    data: data.real,
-                    borderColor: "#00c6ff",
-                    borderWidth: 2,
-                    tension: 0.3
-                },
-                {
-                    label: "Predicted Price",
-                    data: data.predicted,
-                    borderColor: "#ff4d4d",
-                    borderDash: [6,6],
-                    borderWidth: 2,
-                    tension: 0.3
+        <!-- FIXED: JavaScript to set sentiment bar widths -->
+        <script>
+            // Set News Sentiment Bar Width
+            (function() {
+                var newsBar = document.getElementById('news-sentiment-bar');
+                if (newsBar) {
+                    var percent = newsBar.getAttribute('data-percent');
+                    newsBar.style.width = percent + '%';
                 }
-            ]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: {
-                        color: "black"
+                
+                // Set Technical Sentiment Bar Width
+                var techBar = document.getElementById('tech-sentiment-bar');
+                if (techBar) {
+                    var percent = techBar.getAttribute('data-percent');
+                    techBar.style.width = percent + '%';
+                }
+            })();
+        </script>
+
+        <script>
+        (function() {
+            const raw = document.getElementById("chart-data").textContent;
+            const data = JSON.parse(raw);
+
+            if (!data.labels || data.labels.length === 0) return;
+
+            const ctx = document.getElementById("priceChart").getContext("2d");
+
+            new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: "Historical Price",
+                            data: data.real,
+                            borderColor: "#00c6ff",
+                            backgroundColor: "rgba(0, 198, 255, 0.1)",
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 0
+                        },
+                        {
+                            label: "AI Prediction",
+                            data: data.predicted,
+                            borderColor: "#ff6b6b",
+                            backgroundColor: "rgba(255, 107, 107, 0.1)",
+                            borderDash: [6, 6],
+                            borderWidth: 3,
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 6,
+                            pointBackgroundColor: "#ff6b6b"
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: "black",
+                                font: { size: 12, weight: 'bold' }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: "{{ result.symbol }} - Last 60 Days + AI Prediction",
+                            color: "black",
+                            font: { size: 14 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: "black" },
+                            grid: { color: "rgba(0,0,0,0.1)" }
+                        },
+                        y: {
+                            ticks: { 
+                                color: "black",
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            },
+                            grid: { color: "rgba(0,0,0,0.1)" }
+                        }
                     }
                 }
-            }
-        }
-    });
+            });
+        })();
+        </script>
 
-})();
-</script>
+        <div class="blockchain-status">
+            🔗 Prediction logged to blockchain | 
+            <a href="/api/blockchain/{{ result.symbol }}">View Chain</a>
+        </div>
 
-{% endif %}
-
-</div>
+        {% endif %}
+    </div>
 </div>
 
 </body>
